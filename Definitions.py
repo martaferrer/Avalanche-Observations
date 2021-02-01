@@ -1,0 +1,15 @@
+winter = [12, 1, 2]
+spring = [3, 4, 5]
+summer = [6, 7, 8]
+autumn = [9, 10, 11]
+
+
+north1 = [0, 22]
+north2 = [338, 359]
+northeast = [23, 67]
+east = [68, 112]
+southeast = [113, 157]
+south = [158, 202]
+southwest = [203, 247]
+west = [248, 292]
+northwest = [293, 337]
