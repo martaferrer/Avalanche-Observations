@@ -50,18 +50,18 @@ def get_clean_dataset():
     df.loc[[x in definition.autumn for x in df['month']], 'season'] = 'autumn'
 
     # Group aspect in degrees in orientation
-    df_north1    = df[(df['aspect_degrees']>=definition.north1[0]) & (df['aspect_degrees']<=definition.north1[1])]
-    df_north2    = df[(df['aspect_degrees']>=definition.north2[0]) & (df['aspect_degrees']<=definition.north2[1])]
-    df_north     = pd.concat([df_north1, df_north2], axis=0)
-    df_south     = df[(df['aspect_degrees']>=definition.south[0]) & (df['aspect_degrees']<=definition.south[1])]
-    df_southwest = df[(df['aspect_degrees']>=definition.southwest[0]) & (df['aspect_degrees']<=definition.southwest[1])]
-    df_southeast = df[(df['aspect_degrees']>=definition.southeast[0]) & (df['aspect_degrees']<=definition.southeast[1])]
-    df_west      = df[(df['aspsect_degrees']>=definition.west[0]) & (df['aspect_degrees']<=definition.west[1])]
-    df_east      = df[(df['aspect_degrees']>=definition.east[0]) & (df['aspect_degrees']<=definition.east[1])]
-    df_northeast = df[(df['aspect_degrees']>=definition.northeast[0]) & (df['aspect_degrees']<=definition.northeast[1])]
-    df_northwest = df[(df['aspect_degrees']>=definition.northwest[0]) & (df['aspect_degrees']<=definition.northwest[1])]
-
-     #TODO: add column to dataset
+    # TODO: add column to dataset (so far, out od scope)
+    # df_north1    = df[(df['aspect_degrees']>=definition.north1[0]) & (df['aspect_degrees']<=definition.north1[1])]
+    # df_north2    = df[(df['aspect_degrees']>=definition.north2[0]) & (df['aspect_degrees']<=definition.north2[1])]
+    # df_north     = pd.concat([df_north1, df_north2], axis=0)
+    # df_south     = df[(df['aspect_degrees']>=definition.south[0]) & (df['aspect_degrees']<=definition.south[1])]
+    # df_southwest = df[(df['aspect_degrees']>=definition.southwest[0]) & (df['aspect_degrees']<=definition.southwest[1])]
+    # df_southeast = df[(df['aspect_degrees']>=definition.southeast[0]) & (df['aspect_degrees']<=definition.southeast[1])]
+    # df_west      = df[(df['aspect_degrees']>=definition.west[0]) & (df['aspect_degrees']<=definition.west[1])]
+    # df_east      = df[(df['aspect_degrees']>=definition.east[0]) & (df['aspect_degrees']<=definition.east[1])]
+    # df_northeast = df[(df['aspect_degrees']>=definition.northeast[0]) & (df['aspect_degrees']<=definition.northeast[1])]
+    # df_northwest = df[(df['aspect_degrees']>=definition.northwest[0]) & (df['aspect_degrees']<=definition.northwest[1])]
+    #
 
     ###### Type of snow ########
     # Set type of snow column as categorical
@@ -77,11 +77,6 @@ def get_clean_dataset():
     print(df['trigger_type'].unique())
     df.trigger_type = df['trigger_type'].str.upper()
 
-    # Remove the avalanches triggered in purpose using explosives, those rows can bias our results
-    print('We have {} avalanches intentionally triggered'.format(len(df[df['trigger_type'] == 'EXPLOSIVE'])))
-    df_not_explosive = df[df['trigger_type'] != 'EXPLOSIVE']
-
-
 
     return df
 
@@ -96,7 +91,7 @@ def get_df_aspect():
     df_south     = df[(df['aspect_degrees']>=definition.south[0]) & (df['aspect_degrees']<=definition.south[1])]
     df_southwest = df[(df['aspect_degrees']>=definition.southwest[0]) & (df['aspect_degrees']<=definition.southwest[1])]
     df_southeast = df[(df['aspect_degrees']>=definition.southeast[0]) & (df['aspect_degrees']<=definition.southeast[1])]
-    df_west      = df[(df['aspsect_degrees']>=definition.west[0]) & (df['aspect_degrees']<=definition.west[1])]
+    df_west      = df[(df['aspect_degrees']>=definition.west[0]) & (df['aspect_degrees']<=definition.west[1])]
     df_east      = df[(df['aspect_degrees']>=definition.east[0]) & (df['aspect_degrees']<=definition.east[1])]
     df_northeast = df[(df['aspect_degrees']>=definition.northeast[0]) & (df['aspect_degrees']<=definition.northeast[1])]
     df_northwest = df[(df['aspect_degrees']>=definition.northwest[0]) & (df['aspect_degrees']<=definition.northwest[1])]
