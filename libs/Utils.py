@@ -1,8 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy import stats
-from matplotlib import cm
+import seaborn as sns
 
 def is_outlier(points, thresh=10):
     """
@@ -37,62 +36,6 @@ def is_outlier(points, thresh=10):
 
     return modified_z_score < thresh
 
-
-def create_stacked_histogram(df, x_var, groupby_var):
-    # Prepare data
-    df_agg = df.loc[:, [x_var, groupby_var]].groupby(groupby_var)
-    vals = [df[x_var].values.tolist() for i, df in df_agg]
-
-    y_max = 0
-    for i in range(len(vals)):
-        counts = len(vals[i])
-        if counts > y_max: y_max = counts
-
-    # Draw
-    plt.figure(figsize=(10, 9), dpi=80)
-    colors = [plt.cm.Spectral(i / float(len(vals) - 1)) for i in range(len(vals))]
-    n, bins, patches = plt.hist(vals,
-                                df[x_var].unique().__len__(),
-                                stacked=True,
-                                density=False,
-                                color=colors[:len(vals)],
-                                align='mid',
-                                edgecolor='black',
-                                rwidth=20)
-
-    binss = (bins[len(bins)-1]+0.75)/df[x_var].unique().__len__()
-    bins2 = []
-    for i in range(df[x_var].unique().__len__()):
-        bins2.append(binss*i)
-
-    # Decoration
-    plt.legend({group: col for group, col in zip(np.unique(df[groupby_var]).tolist(), colors[:len(vals)])})
-    plt.title(f"Stacked Histogram of ${x_var}$ colored by ${groupby_var}$", fontsize=12)
-    plt.xlabel(x_var)
-    plt.ylabel("Avalanche activity")
-    plt.ylim(0, y_max)
-    #plt.xticks(ticks=bins)
-    #plt.xticks(ticks=bins2, labels=list(df[x_var].unique()), rotation=0, horizontalalignment='center')
-    plt.show()
-
-def create_pie(sizes, labels, list=[], startangle=338):
-
-    if(len(list) == 0):
-        mypie, _ = plt.pie(sizes, labels=labels, labeldistance=1.2, startangle=startangle, shadow=False,
-                           counterclock=False)
-    else:
-        cmap = plt.cm.Reds
-        colors = cmap(np.linspace(0., 1., len(labels)))
-        colors = cmap(list)
-
-        mypie, _ = plt.pie(sizes, labels=labels, labeldistance=1.2, startangle=startangle, shadow=False, colors=colors, counterclock=False)
-
-
-    plt.setp(mypie, edgecolor='white')
-    plt.axis('equal')
-    #plt.legend()
-    plt.show()
-
 def create_dummy_df(df, cat_cols, dummy_na):
     '''
     INPUT:
@@ -109,10 +52,6 @@ def create_dummy_df(df, cat_cols, dummy_na):
             5. Use a prefix of the column name with an underscore (_) for separating
     '''
 
-    # df_non_cat = df.drop(axis=1, columns=cat_cols, inplace=False)
-    # dummy_col = pd.get_dummies(df[cat_cols], dummy_na=dummy_na, prefix_sep="_")
-    # new_df = pd.concat([df_non_cat, dummy_col], axis=1)
-
     for col in  cat_cols:
         try:
             # for each cat add dummy var, drop original column
@@ -125,38 +64,215 @@ def create_dummy_df(df, cat_cols, dummy_na):
 
     return df
 
+def remap_cat_var(df, cat_cols):
+    '''
+    INPUT:
+    df - pandas dataframe with categorical variables you want to dummy
+    cat_cols - list of strings that are associated with names of the categorical columns
+    dummy_na - Bool holding whether you want to dummy NA vals of categorical columns or not
+
+    OUTPUT:
+    df - a new dataframe that has the following characteristics:
+            1. contains all columns that were not specified as categorical
+            2. removes all the original columns in cat_cols
+            3. dummy columns for each of the categorical columns in cat_cols
+            4. if dummy_na is True - it also contains dummy columns for the NaN values
+            5. Use a prefix of the column name with an underscore (_) for separating
+    '''
+    df_copy = df.copy()
+    for col in  cat_cols:
+        unique_val = df_copy[col].unique()
+        for i in range(len(unique_val)):
+            df_copy[col][df_copy[col] == unique_val[i]] = i
+        df_copy[col] = df_copy[col].astype('int64')
+
+    return df_copy
+
+# def create_stacked_histogram(df, x_var, groupby_var):
+#     # Prepare data
+#     df_agg = df.loc[:, [x_var, groupby_var]].groupby(groupby_var)
+#     vals = [df[x_var].values.tolist() for i, df in df_agg]
+#
+#     y_max = 0
+#     for i in range(len(vals)):
+#         counts = len(vals[i])
+#         if counts > y_max: y_max = counts
+#
+#     # Draw
+#     plt.figure(figsize=(10, 9), dpi=80)
+#     colors = [plt.cm.Spectral(i / float(len(vals) - 1)) for i in range(len(vals))]
+#     n, bins, patches = plt.hist(vals,
+#                                 df[x_var].unique().__len__(),
+#                                 stacked=True,
+#                                 density=False,
+#                                 color=colors[:len(vals)],
+#                                 align='mid',
+#                                 edgecolor='black',
+#                                 rwidth=20)
+#
+#     binss = (bins[len(bins)-1]+0.75)/df[x_var].unique().__len__()
+#     bins2 = []
+#     for i in range(df[x_var].unique().__len__()):
+#         bins2.append(binss*i)
+#
+#     # Decoration
+#     plt.legend({group: col for group, col in zip(np.unique(df[groupby_var]).tolist(), colors[:len(vals)])})
+#     plt.title(f"Stacked Histogram of ${x_var}$ colored by ${groupby_var}$", fontsize=12)
+#     plt.xlabel(x_var)
+#     plt.ylabel("Avalanche activity")
+#     plt.ylim(0, y_max)
+#     #plt.xticks(ticks=bins)
+#     #plt.xticks(ticks=bins2, labels=list(df[x_var].unique()), rotation=0, horizontalalignment='center')
+#     plt.show()
+
+def create_scatter_plot(df, colx, coly, stackedcol):
+    color = ['#FFC305', '#FF5733', '#C70039', '#900C3F']
+    x = df[colx]
+    y = df[coly]
+
+    fig, ax = plt.subplots()
+    i=0
+    for val in sorted(list(df[stackedcol].unique())):
+        ax.scatter(df[colx][df[stackedcol] == val],
+                    df[coly][df[stackedcol] == val])#,
+                    #marker='.')#,
+                    #c=color[i])
+
+        i+=1
+
+    ax.scatter(df[colx][df['max.danger.corr'] == 4],
+               df[coly][df['max.danger.corr'] == 4], marker = '.', color='black', s=0.9)
+
+    leg = plt.legend(loc='upper right', title="\n\u2022 Avalanche with \n risk 4-High")
+    #h = [plt.plot([], [], color="gray", marker="o", ms=i, ls="")[0] for i in range(5, 13)]
+    ax.add_artist(leg)
+
+    ax.legend([ 'Size '+ str(i) for i in sorted(list(df[stackedcol].unique()))],
+                    loc='lower right')
+
+    #ax.text(10, 10, 'Danger level 4-High', fontsize=15)
+
+    plt.xlabel('Avalanche length')
+    plt.ylabel('Avalanche width')
+    ax = plt.gca()  # set color background
+    ax.set_facecolor('xkcd:grey')
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
 
 
+def create_pie(sizes, labels, colorweight=None, startangle=0, labeldistance=1.2, radius=1):
 
-def create_two_pie(sizes, labels, list, startangle=338):
-    cmap = plt.cm.Reds
-    colors = cmap(np.linspace(0., 1., len(labels)))
-    colors = cmap(list)
+    if colorweight is not None:
+        cmap = plt.cm.Blues
+        colors = cmap(colorweight)
+    else:
+        colors = None
+
+    mypie, _ = plt.pie(x=sizes,
+                        labels=labels,
+                        labeldistance=labeldistance,
+                        radius=radius,
+                        startangle=startangle,
+                        shadow=False,
+                        colors=colors,
+                        counterclock=False)
+
+
+    plt.setp(mypie, edgecolor='white')
+    plt.axis('equal')
+    #plt.legend()
+    plt.show()
+
+def create_two_pie(sizes1, sizes2, labels1, labels2, colorweight=None, startangle=None, labeldistance=1.2):
+
+    if colorweight is not None:
+        cmap = plt.cm.Blues
+        colors = cmap(colorweight)
+    else:
+        colors = None
 
     # First Ring (outside)
     fig, ax = plt.subplots()
-    mypie, _ = ax.pie(sizes, labels=labels, radius=1.3, labeldistance=1.2, startangle=startangle, shadow=False, colors=colors, counterclock=False)
+    mypie, _ = ax.pie(sizes1,
+                      labels=labels1,
+                      radius=1,
+                      labeldistance=1.1,
+                      startangle=startangle,
+                      shadow=False,
+                      colors=colors,
+                      counterclock=False)
+    # Create the donut shape
     plt.setp(mypie, width=0.3, edgecolor='white')
     plt.axis('equal')
 
     # Second Ring (Inside)
-    mypie2, _ = ax.pie(sizes, radius=1.3 - 0.3,
-                       labels=['52&', 'r','52&', 'r','52&', 'r','52&','i'],  startangle=startangle, labeldistance=0.7, colors=colors, counterclock=False)#
-    #[a(0.5), a(0.4),
-     #                                                                    a(0.3), b(0.5), b(0.4), c(0.6), c(0.5), c(0.4),
-     #                                                                    c(0.3), c(0.2)])
+    mypie2, _ = ax.pie(sizes2,
+                       radius=1, #- 0.3,
+                       labels=labels2,
+                       startangle=startangle,
+                       labeldistance=0.6,
+                       colors=colors,
+                       counterclock=False)
+    # Create the donut shape
     plt.setp(mypie2,  edgecolor='white')
+
+    #Set no margin between the inside and outsite pie
     plt.margins(0, 0)
-    #plt.legend()
+    plt.show()
+
+def create_tri_pie(sizes1, sizes2, size3, labels1, labels2, labels3, colorweight=None, startangle=0, labeldistance=1.2):
+
+    if colorweight is not None:
+        cmap = plt.cm.Reds
+        colors = cmap(colorweight)
+    else:
+        colors = None
+
+    # First Ring (outside)
+    fig, ax = plt.subplots()
+    mypie, _ = ax.pie(sizes1,
+                      labels=labels1,
+                      radius=1.3,
+                      labeldistance=1.2,
+                      startangle=startangle,
+                      shadow=False,
+                      colors=colors,
+                      counterclock=False)
+    # Create the donut shape
+    plt.setp(mypie, width=0.3, edgecolor='white')
+    plt.axis('equal')
+
+    # Second Ring (Inside)
+    mypie2, _ = ax.pie(sizes2,
+                       radius=1.3 - 0.3,
+                       labels=labels2,
+                       startangle=startangle,
+                       labeldistance=0.7,
+                       colors=colors,
+                       counterclock=False)
+    # Create the donut shape
+    plt.setp(mypie2,  edgecolor='white')
+
+
+    # Third Ring (Inside)
+    mypie2, _ = ax.pie(size3,
+                       radius=1 - 0.3,
+                       labels=labels3,
+                       startangle=startangle,
+                       labeldistance=0.3,
+                       colors=colors,
+                       counterclock=False)
+    # Create the donut shape
+    plt.setp(mypie2,  edgecolor='white')
+
+    #Set no margin between the inside and outsite pie
+    plt.margins(0, 0)
     plt.show()
 
 
-#######################################################################################################################
-#######################################################################################################################
-# BAR PLOT
-#######################################################################################################################
-#######################################################################################################################
 def create_stacked_bar_plot(df, stacked_col_name, bar_col_name):
+
     # Prepare data
     stack_labels = sorted(df[stacked_col_name].unique(), reverse=False)
     stack_vals = [df[bar_col_name][df[stacked_col_name] == i] for i in stack_labels]
@@ -172,12 +288,11 @@ def create_stacked_bar_plot(df, stacked_col_name, bar_col_name):
     for i in range(len(stack_labels)):
         temp = pd.DataFrame(stack_vals[i])
         stack = [len(temp[temp[bar_col_name] == j]) for j in bar_labels]
-        plt.bar(np.arange(N), stack, width=0.5, bottom=bottom, color=pal[i])
+        plt.bar(np.arange(N), stack, width=0.5, bottom=bottom, color=None)
         if(bottom == None):
             bottom = stack # First stack in each column
         else:
             bottom = [a + b for a, b in zip(stack, bottom)] # Set were the next stack must start
-        print(stack, bottom)
 
     plt.ylabel('Avalanche activity')
     plt.title('Avalanche Observations')
@@ -188,6 +303,49 @@ def create_stacked_bar_plot(df, stacked_col_name, bar_col_name):
     plt.legend(stack_labels, title='Danger level')
 
     plt.show()
+
+def create_stacked_bar_subplot(df, stacked_col_name, bar_col_name):
+
+    fig, axs = plt.subplots(2, 2)
+    fig.suptitle('Sharing x per column, y per row')
+    for k in range(len(bar_col_name)):
+        if (k == 0): m = 0; k = 0
+        if (k == 1): m = 0; k = 1
+        if (k == 2): m = 1; k = 0
+        if (k == 3): m = 1; k = 1
+        # Prepare data
+        stack_labels = sorted(df[stacked_col_name].unique(), reverse=False)
+        stack_vals = [df[bar_col_name[k]][df[stacked_col_name] == i] for i in stack_labels]
+        bar_labels = df[bar_col_name[k]].unique()
+        N = len(bar_labels)
+
+        # TODO: create a color palet depending on the stack array length
+        pal = ['#FFC305', '#FF5733', '#C70039', '#900C3F', '#581845']
+
+        # Get the required arrays to correctly plot the data
+        # inspiration comes from: https://matplotlib.org/3.1.1/gallery/lines_bars_and_markers/bar_stacked.html
+        bottom = None
+        for i in range(len(stack_labels)):
+            temp = pd.DataFrame(stack_vals[i])
+            stack = [len(temp[temp[bar_col_name[k]] == j]) for j in bar_labels]
+            axs[m,k].bar(np.arange(N), stack, width=0.5, bottom=bottom, color=None)
+            if(bottom == None):
+                bottom = stack # First stack in each column
+            else:
+                bottom = [a + b for a, b in zip(stack, bottom)] # Set were the next stack must start
+
+        #plt.ylabel('Avalanche activity')
+        #plt.title('Avalanche Observations')
+        #axs[m,k].xticks(np.arange(N), bar_labels)
+        #axs[m,k].set(xlabel=bar_labels)
+
+        ax = plt.gca() # set color background
+        axs[m,k].set_facecolor('xkcd:grey')
+        axs[m,k].grid(zorder=1) #set grid in background
+        #axs[m,k].legend(stack_labels, title='Danger level')
+
+    plt.show()
+
 
 def create_bar_plot(df, column, x_label, y_label, sort_x):
     feature_counts = []
@@ -263,4 +421,79 @@ def create_bi_bar_plot(df, stacked_col_name1, stacked_col_name2, bar_col_name):
     axs[0].set_xlim([-bottom2[2]-4000, 0])
     axs[1].set_xlim([0, bottom2[2]+4000])
     #axs[0].get_yaxis().tick_right()
+    plt.show()
+
+def create_sublabels_bar_plot(features_set, labels, label2, ylabel, color, title):
+
+    x = np.arange(len(labels))  # the label locations
+    width = 0.2  # the width of the bars
+
+    fig, ax = plt.subplots()
+
+    rects1 = ax.bar(x - width - width / 2, features_set[0], width, label=label2[0], color=color[0])
+    rects2 = ax.bar(x - width / 2,         features_set[1], width, label=label2[1], color=color[1])
+    rects3 = ax.bar(x + width / 2,         features_set[2], width, label=label2[2], color=color[2])
+    rects4 = ax.bar(x + width + width / 2, features_set[3], width, label=label2[3], color=color[3])
+
+    # Add some text for labels, title and custom x-axis tick labels, etc.
+    ax.set_ylabel('Number of avalanches')
+    ax.set_xlabel('Avalanche Danger Level')
+    #ax.set_title(title)
+    ax.set_xticks(x)
+    ax.set_xticklabels(ylabel)
+    ax.legend(title=title)
+
+    # def autolabel(rects):
+    #     """Attach a text label above each bar in *rects*, displaying its height."""
+    #     for rect in rects:
+    #         height = rect.get_height()
+    #         ax.annotate('{}'.format(height),
+    #                     xy=(rect.get_x() + rect.get_width() / 2, height),
+    #                     xytext=(0, 3),  # 3 points vertical offset
+    #                     textcoords="offset points",
+    #                     ha='center', va='bottom')
+    #
+    # autolabel(rects1)
+    # autolabel(rects2)
+    # autolabel(rects3)
+    # autolabel(rects4)
+
+    ax = plt.gca()  # set color background
+    ax.set_facecolor('xkcd:grey')
+    ax.grid(zorder=1)
+    ax.set_axisbelow(True)
+
+    fig.tight_layout()
+    plt.show()
+
+
+
+def create_correlation_map(df, title):
+    corr = df.corr(method='pearson')
+    plt.subplots(figsize=(16, 6))
+    mask = np.triu(np.ones_like(corr, dtype=np.bool))
+    heatmap = sns.heatmap(data=corr, vmin=-1, vmax=1, annot=True, mask=mask)
+    heatmap.set_title(title, fontdict={'fontsize': 12}, pad=12);
+    plt.show()
+
+def create_single_col_corr_map(df, col, title):
+    corr = df.corr()[[col]].sort_values(by=col, ascending=False)
+    heatmap = sns.heatmap(data=corr, vmin=-1, vmax=1, annot=True, cmap='BrBG')
+    heatmap.set_title(title)
+    plt.gcf().subplots_adjust(bottom=0.15)
+    plt.tight_layout()
+    plt.show()
+
+
+def create_box_plot(data, notch=False):
+    fig1, ax1 = plt.subplots()
+    #ax1.set_title('Basic Plot')
+    bp = ax1.boxplot(data, notch=notch)
+    plt.setp(bp['boxes'], color='black')
+    plt.xticks([1, 2, 3, 4, 5], ['1-Low', '2-Moderate', '3-Considerable', '4-High', '5-Very high'])
+    ax1.set_xlabel('Avalanche Danger Level')
+    ax1.set_ylabel('Avalanche Activity Index (AAI)')
+    ax1.grid(zorder=1)
+    # set grid in background
+    ax1.set_axisbelow(True)
     plt.show()
