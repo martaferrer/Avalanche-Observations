@@ -1,6 +1,6 @@
 # Avalanche-Observations
 
-This folder contains python scripts which analyse the avalanche activity in Davos (Switzerland) during the years 1998-2019 (21 years).
+This folder contains python scripts which analyses the avalanche activity in Davos (Switzerland) during the years 1998-2019 (21 years).
 A blog post from this project is published at [this](https://mferresu.medium.com/characteristics-of-avalanche-occurrence-e8a48d367ad3) website. 
 
 ## Installation
