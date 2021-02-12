@@ -241,8 +241,6 @@ def plot_avalanche_activity_vs_aspect():
 def plot_avalanche_size():
     '''
     :def: This function creates scatter plot showing the avalanches with respect to their length and width.
-
-    :return: void
     '''
 
     # Avalanche size
