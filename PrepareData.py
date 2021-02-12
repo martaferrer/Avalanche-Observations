@@ -7,7 +7,7 @@ import libs.Definitions as definition
 
 def get_clean_dataset():
     # Read dataset
-    df = pd.read_csv('./Dataset/data_set_1_avalanche_observations_wi9899_to_wi1819_davos.csv', delimiter=';')
+    df = pd.read_csv('./dataset/data_set_1_avalanche_observations_wi9899_to_wi1819_davos.csv', delimiter=';')
     print('Original dataset shape: ', df.shape)
     print(df.columns)
 
